@@ -18,9 +18,9 @@ namespace WebUiSharp
             application = app;
             handle = NativeMethods.webui_new_window();
 
-            if (app.Runtime != WebUiRuntime.none)
+            if (app.Runtime != WebUiRuntimes.None)
             {
-                NativeMethods.webui_script_runtime(handle, app.Runtime);
+                NativeMethods.webui_set_runtime(handle, (ushort)app.Runtime);
             }
         }
         #endregion
@@ -29,15 +29,6 @@ namespace WebUiSharp
         internal IntPtr Handle
         {
             get => handle;
-        }
-
-        public uint WindowNumber
-        {
-            get
-            {
-                if (handle == IntPtr.Zero) return 0;
-                return NativeMethods.webui_window_get_number(handle);
-            }
         }
 
         public WebUiApplication Application
@@ -69,46 +60,23 @@ namespace WebUiSharp
 
         public void SetMultiAccess(bool status)
         {
-            NativeMethods.webui_multi_access(handle, status);
-        }
-
-        public bool Open(string url)
-        {
-            using (var urlHandle = new GCString(url))
-            {
-                return NativeMethods.webui_open(handle, (IntPtr)urlHandle, application.Browser);
-            }
+            NativeMethods.webui_set_multi_access(handle, status);
         }
 
         public bool Show(string html)
         {
             using (var htmlHandle = new GCString(html, GCString.EncodingTypes.UTF8))
             {
-                return NativeMethods.webui_show(handle, (IntPtr)htmlHandle, application.Browser);
+                return NativeMethods.webui_show(handle, (IntPtr)htmlHandle);
             }
         }
         
-        public bool Refresh(string html)
+        public bool ShowBrowser(string html, WebUiBrowsers browser)
         {
             using (var htmlHandle = new GCString(html, GCString.EncodingTypes.UTF8))
             {
-                return NativeMethods.webui_refresh(handle, (IntPtr)htmlHandle);
+                return NativeMethods.webui_show_browser(handle, (IntPtr)htmlHandle, (ushort)browser);
             }
-        }
-
-        public string NewServer(string rootPath)
-        {
-            using (var pathHandle = new GCString(rootPath))
-            {
-                var urlPtr = NativeMethods.webui_new_server(handle, (IntPtr)pathHandle);
-                if (urlPtr != IntPtr.Zero)
-                {
-                    var ansiStr = Marshal.PtrToStringAnsi(urlPtr);
-                    return ansiStr;
-                }
-            }
-
-            return string.Empty;
         }
 
         public ushort Bind(string element, EventCallback callback)
@@ -126,50 +94,34 @@ namespace WebUiSharp
             }
         }
 
-        public void BindAll(EventCallback callback)
+        public bool RunScript(string script)
         {
-            var cb = new cb_fn((e) =>
-            {
-                var ev = new WebUiEvent(e);
-                callback.Invoke(ev);
-            });
-
-            IntPtr cbPtr = Marshal.GetFunctionPointerForDelegate(cb);
-            NativeMethods.webui_bind_all(handle, cbPtr);
-        }
-
-        public JavaScriptResult RunJavaScript(string script, ushort timeOut = 30)
-        {
-            if (string.IsNullOrEmpty(script)) return JavaScriptResult.Empty;
+            if (string.IsNullOrEmpty(script)) return false;
 
             using (var scriptHandle = new GCString(script, GCString.EncodingTypes.UTF8))
             {
-                var scriptInterface = new webui_script()
-                {
-                    script = (IntPtr)scriptHandle,
-                    timeout = timeOut,
-                    result = IntPtr.Zero
-                };
+                return NativeMethods.webui_run(handle, (IntPtr)scriptHandle);
+            }
+        }
 
-                IntPtr interfacePtr = Marshal.AllocHGlobal(Marshal.SizeOf(scriptInterface));
-                try
-                {   
-                    Marshal.StructureToPtr(scriptInterface, interfacePtr, true);
-                    NativeMethods.webui_script_interface_struct(handle, interfacePtr);
+        public string RunScriptWithResult(string script, ushort timeout = 30, int bufferLength = 1024)
+        {
+            if (string.IsNullOrEmpty(script)) return string.Empty;
 
-                    return new JavaScriptResult(scriptInterface.result);
-                }
-                catch(Exception e)
+            using (var scriptHandle = new GCString(script, GCString.EncodingTypes.UTF8))
+            {
+                IntPtr bufferPtr = Marshal.AllocHGlobal(bufferLength);
+                bool result = NativeMethods.webui_script(handle, (IntPtr)scriptHandle, timeout, ref bufferPtr, bufferLength);
+                if (result)
                 {
-                    System.Diagnostics.Debug.WriteLine(e.Message);
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(interfacePtr);
+                    string res = Marshal.PtrToStringUTF8(bufferPtr, bufferLength);
+                    Marshal.FreeHGlobal(bufferPtr);
+
+                    if (string.IsNullOrEmpty(res)) return string.Empty;
+                    return res.Trim();
                 }
             }
-
-            return JavaScriptResult.Empty;
+            return string.Empty;
         }
 
         public void Close()
@@ -190,7 +142,7 @@ namespace WebUiSharp
 
         public void Dispose()
         {
-            
+            handle = IntPtr.Zero;
         }
         #endregion
     }

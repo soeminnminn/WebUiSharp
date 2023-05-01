@@ -10,28 +10,20 @@ namespace WebUiSharp
     public class WebUiApplication : IDisposable
     {
         #region Variables
-        private readonly WebUiBrowser browser;
-        private readonly WebUiRuntime runtime;
-        private readonly string currentPath;
+        private readonly WebUiRuntimes runtime;
         private WebUiWindow mainWindow = null;
         private readonly List<WebUiWindow> windows;
         #endregion
 
         #region Constructors
         public WebUiApplication()
-            : this(WebUiBrowser.any)
+            : this(WebUiRuntimes.None)
         { }
 
-        public WebUiApplication(WebUiBrowser browser)
-            : this(browser, WebUiRuntime.none)
-        { }
-
-        public WebUiApplication(WebUiBrowser browser, WebUiRuntime runtime)
+        public WebUiApplication(WebUiRuntimes runtime)
         {
-            this.browser = browser;
             this.runtime = runtime;
             this.windows = new List<WebUiWindow>();
-            currentPath = NativeMethods.webui_get_current_path();
         }
 
         ~WebUiApplication()
@@ -41,23 +33,18 @@ namespace WebUiSharp
         #endregion
 
         #region Properties
-        public string CurrentPath
-        {
-            get => currentPath;
-        }
-
-        public WebUiBrowser Browser
-        {
-            get => browser;
-        }
-
-        public WebUiRuntime Runtime
+        public WebUiRuntimes Runtime
         {
             get => runtime;
         }
         #endregion
 
         #region Methods
+        public void SetTimeout(ushort second)
+        {
+            NativeMethods.webui_set_timeout(second);
+        }
+
         public WebUiWindow NewWindow()
         {
             var window = new WebUiWindow(this);
@@ -78,16 +65,6 @@ namespace WebUiSharp
             CloseAllWindows(true);
 
             NativeMethods.webui_exit();
-        }
-
-        public bool IsAppRunning()
-        {
-            return NativeMethods.webui_is_app_running();
-        }
-
-        public bool IsAnyWindowRunning()
-        {
-            return NativeMethods.webui_is_any_window_running();
         }
 
         public virtual void Dispose(bool disposing)
@@ -111,7 +88,7 @@ namespace WebUiSharp
         internal bool IsMainWindow(WebUiWindow window)
         {
             if (mainWindow == null || window == null) return false;
-            return window.WindowNumber == mainWindow.WindowNumber;
+            return window.Handle == mainWindow.Handle;
         }
 
         internal bool IsHasMainWindow()

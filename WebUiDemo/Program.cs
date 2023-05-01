@@ -40,6 +40,5 @@ using (var app = new WebUiApplication())
         app.Exit();
     });
 
-    // app.OpenUrl("http://localhost:8080/"); // success
     app.Wait();
 }

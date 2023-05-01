@@ -10,8 +10,8 @@
     <Title>WebUiSharp</Title>
     <Copyright>Copyright © Soe Minn Minn 2023</Copyright>
     <RepositoryUrl>https://github.com/soeminnminn/WebUiSharp</RepositoryUrl>
-    <AssemblyVersion>2.0.6</AssemblyVersion>
-    <FileVersion>2.0.6</FileVersion>
+    <AssemblyVersion>2.2.0</AssemblyVersion>
+    <FileVersion>2.2.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -24,6 +24,9 @@
 
   <ItemGroup>
     <None Update="webui-2-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="webui-2-x64.dyn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="webui-2-x64.so">

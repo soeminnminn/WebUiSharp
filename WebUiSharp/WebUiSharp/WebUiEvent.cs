@@ -8,11 +8,9 @@ namespace WebUiSharp
     public class WebUiEvent
     {
         #region Properties
-        public uint ElementId { get; private set; }
+        public string Element { get; private set; }
 
-        public string ElementName { get; private set; }
-
-        public uint WindowId { get; private set; }
+        public WebUiEvents EventType { get; private set; }
 
         public string Data { get; private set; }
 
@@ -27,10 +25,9 @@ namespace WebUiSharp
 
             if (ptr != IntPtr.Zero)
             {
-                var ev = Marshal.PtrToStructure<webui_event>(ptr);
-                ElementId = ev.element_id;
-                ElementName = ev.element_name;
-                WindowId = ev.window_id;
+                var ev = Marshal.PtrToStructure<webui_event_t>(ptr);
+                EventType = ev.type;
+                Element = ev.element;
 
                 if (ev.data != IntPtr.Zero)
                     Data = Marshal.PtrToStringUTF8(ev.data);
